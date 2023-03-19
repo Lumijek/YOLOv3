@@ -49,7 +49,6 @@ class Yolov3Loss(nn.Module):
 		predictions[:, :, :, :, 2:4] = scale_anchors * torch.exp(predictions[:, :, :, :, 2:4])
 		obj_preds = predictions[object_inds]
 		obj_labels = labels[object_inds]
-		#print(predictions[torch.isnan(predictions)])
 		noobj_preds = predictions[~object_inds]
 		noobj_labels = labels[~object_inds]
 
@@ -75,14 +74,5 @@ class Yolov3Loss(nn.Module):
 
 		loss = loss_coord + loss_confidence + loss_class
 		return loss, loss_coord, loss_confidence, loss_class
-
-
-
-
-
-
-
-
-
 
 

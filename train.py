@@ -24,11 +24,11 @@ elif torch.cuda.is_available():
 model = YOLOv3()
 criterion = Yolov3Loss().to(device)
 epochs = 160
-batch_size = 8
+batch_size = 64
 classes = ['horse', 'person', 'bottle', 'dog', 'tvmonitor', 'car', 'aeroplane', 'bicycle', 'boat', 'chair', 'diningtable', 'pottedplant', 'train', 'cat', 'sofa', 'bird', 'sheep', 'motorbike', 'bus', 'cow']
 dataloader = get_dataset(batch_size)
 
-lr = 1e-1
+lr = 1e-3
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0.0005)
 
 def train_network(model, optimizer, criterion, epochs, dataloader, device):
@@ -37,7 +37,7 @@ def train_network(model, optimizer, criterion, epochs, dataloader, device):
     cycle = 0
     for epoch in range(epochs):
         if epoch == 10:
-            optimizer.param_groups[0]["lr"] = 5e-3
+            optimizer.param_groups[0]["lr"] = 8e-3
         if epoch == 60:
             optimizer.param_groups[0]["lr"] = 1e-4
         if epoch == 90:

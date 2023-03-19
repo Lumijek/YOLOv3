@@ -52,11 +52,11 @@ class YoloDataset(Dataset):
         bboxes = get_bboxlist(bnds)
         transform = A.Compose([
             A.Resize(self.image_size, self.image_size),
-            #A.RandomCrop(self.image_size, self.image_size),
-            #A.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.07),
-            #A.HorizontalFlip(),
-            #A.Rotate(limit=(-10, 10)),
-            #A.GaussNoise(p=1),
+            A.RandomCrop(self.image_size, self.image_size),
+            A.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.07),
+            A.HorizontalFlip(),
+            A.Rotate(limit=(-10, 10)),
+            A.GaussNoise(p=1),
             A.pytorch.transforms.ToTensorV2()
         ], bbox_params=A.BboxParams(format='pascal_voc'))
 

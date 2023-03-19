@@ -52,11 +52,6 @@ class Yolov3Loss(nn.Module):
 		noobj_preds = predictions[~object_inds]
 		noobj_labels = labels[~object_inds]
 
-		if obj_preds.shape[0] == 0:
-			loss_noobj_conf = self.bce(noobj_preds[:, 4], noobj_labels[:, 4])
-			loss_confidence = (loss_noobj_conf * self.lambda_noobj) / batch_size
-			return loss_confidence, torch.tensor(0), loss_confidence, torch.tensor(0)
-
 		# LOSS CALCULATION
 
 		loss_xy = self.mse(obj_preds[:, :2], obj_labels[:, :2])

@@ -24,7 +24,7 @@ elif torch.cuda.is_available():
 model = YOLOv3()
 criterion = Yolov3Loss().to(device)
 epochs = 160
-batch_size = 64
+batch_size = 4
 classes = ['horse', 'person', 'bottle', 'dog', 'tvmonitor', 'car', 'aeroplane', 'bicycle', 'boat', 'chair', 'diningtable', 'pottedplant', 'train', 'cat', 'sofa', 'bird', 'sheep', 'motorbike', 'bus', 'cow']
 dataloader = get_dataset(batch_size)
 
@@ -51,9 +51,11 @@ def train_network(model, optimizer, criterion, epochs, dataloader, device):
             optimizer.zero_grad()
 
             x1, x2, x3 = model(image)
+            print(x1.shape)
             loss_s1, a1, b1, c1 = criterion(x1, labels[0], 0)
             loss_s2, a2, b2, c2 = criterion(x2, labels[1], 1)
             loss_s3, a3, b3, c3 = criterion(x3, labels[2], 2)
+            print(labels[0].shape)
 
             loss = loss_s1 + loss_s2 + loss_s3
             a = a1 + a2 + a3

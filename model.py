@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import anchors
-from conv import Convolutional
 
 def get_params(model):
 	print(sum(p.numel() for p in model.parameters()))
@@ -101,7 +100,6 @@ class YOLOv3(nn.Module):
 			ConvLayer(1024, 3 * (5 + num_classes), 1, bn=False, bias=True)
 		)
 
-
 		self.upsample1 = nn.Sequential(
 			nn.ConvTranspose2d(512, 512, 3, stride=2, padding=1, output_padding=1),
 			nn.BatchNorm2d(512),
@@ -171,6 +169,4 @@ class YOLOv3(nn.Module):
 
 		return x1, x2, x3
 
-a = DarkNet53()
-get_params(a)
 

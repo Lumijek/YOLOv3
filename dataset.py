@@ -97,10 +97,8 @@ class YoloDataset(Dataset):
 
         return image, labels
 
-def get_dataset(batch_size=1, S=[13, 26, 52], C=20, image_size=416):
+def get_dataset(batch_size=32, S=[13, 26, 52], C=20, image_size=416):
     data = torchvision.datasets.VOCDetection("data", '2012', 'train', download=False)
     dataloader = DataLoader(YoloDataset(data, S, C, image_size), batch_size=batch_size, num_workers=0, pin_memory=True, shuffle=True)
     return dataloader
-a = get_dataset()
-i, o = next(iter(a))
 

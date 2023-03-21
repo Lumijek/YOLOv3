@@ -38,7 +38,6 @@ class Yolov3Loss(nn.Module):
 		self.bce = nn.BCEWithLogitsLoss(reduction='mean')
 
 	def forward(self, predictions, labels, scale_idx):
-		print("")
 		batch_size = predictions.shape[0]
 		scale_anchors = self.anchors[scale_idx]
 

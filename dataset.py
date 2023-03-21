@@ -55,8 +55,6 @@ class YoloDataset(Dataset):
             A.RandomCrop(self.image_size, self.image_size),
             A.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.07),
             A.HorizontalFlip(),
-            A.Rotate(limit=(-10, 10)),
-            A.GaussNoise(p=1),
             A.pytorch.transforms.ToTensorV2()
         ], bbox_params=A.BboxParams(format='pascal_voc'))
 
@@ -96,10 +94,13 @@ class YoloDataset(Dataset):
                 current_box = torch.tensor([xcell, ycell, w, h, 1, box[4]])
                 labels[scale_idx][i, j, anchor_idx] = current_box
 
+
         return image, labels
 
-def get_dataset(batch_size=16, S=[13, 26, 52], C=20, image_size=416):
+def get_dataset(batch_size=1, S=[13, 26, 52], C=20, image_size=416):
     data = torchvision.datasets.VOCDetection("data", '2012', 'train', download=False)
     dataloader = DataLoader(YoloDataset(data, S, C, image_size), batch_size=batch_size, num_workers=0, pin_memory=True, shuffle=True)
     return dataloader
+a = get_dataset()
+i, o = next(iter(a))
 

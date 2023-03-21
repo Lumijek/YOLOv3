@@ -2,22 +2,25 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import anchors
+from conv import Convolutional
 
 def get_params(model):
 	print(sum(p.numel() for p in model.parameters()))
+
 class ConvLayer(nn.Module):
-	def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=None, alpha=0.1, bn=True):
+	def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=None, alpha=0.1, bn=True, bias=False):
 		super().__init__()
 		self.bn = bn
 		if padding == None:
 			padding = kernel_size // 2
-		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding)
-		self.bn = nn.BatchNorm2d(out_channels)
+
+		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
+		self.batch_norm = nn.BatchNorm2d(out_channels)
 		self.activation = nn.LeakyReLU(alpha)
 
 	def forward(self, x):
 		if self.bn:
-			return self.activation(self.bn(self.conv(x)))
+			return self.activation(self.batch_norm(self.conv(x)))
 		else:
 			return self.conv(x)
 
@@ -95,9 +98,9 @@ class YOLOv3(nn.Module):
 		)
 		self.out1 = nn.Sequential(
 			ConvLayer(512, 1024, 3),
-			ConvLayer(1024, 3 * (5 + num_classes), 1, bn=False)
-
+			ConvLayer(1024, 3 * (5 + num_classes), 1, bn=False, bias=True)
 		)
+
 
 		self.upsample1 = nn.Sequential(
 			nn.ConvTranspose2d(512, 512, 3, stride=2, padding=1, output_padding=1),
@@ -114,7 +117,7 @@ class YOLOv3(nn.Module):
 		)
 		self.out2 = nn.Sequential(
 			ConvLayer(512, 1024, 3),
-			ConvLayer(1024, 3 * (5 + num_classes), 1, bn=False)
+			ConvLayer(1024, 3 * (5 + num_classes), 1, bn=False, bias=True)
 
 		)
 
@@ -133,12 +136,14 @@ class YOLOv3(nn.Module):
 		)
 		self.out3 = nn.Sequential(
 			ConvLayer(512, 1024, 3),
-			ConvLayer(1024, 3 * (5 + num_classes), 1, bn=False)
+			ConvLayer(1024, 3 * (5 + num_classes), 1, bn=False, bias=True)
 
 		)
 
 	def forward(self, x):
 		out1, out2, out3 = self.backbone(x)
+		print("")
+		print(out1.var().item(), out2.var().item(), out3.var().item())
 
 		cat1 = self.detector1(out3)
 		x1 = self.out1(cat1)
@@ -162,8 +167,10 @@ class YOLOv3(nn.Module):
 
 		x3 = x3.reshape(-1, 3, (5 + self.num_classes), x3.shape[-1], x3.shape[-1])
 		x3 = x3.permute(0, 3, 4, 1, 2).contiguous()
+		print(x1.amax().item(), x2.amax().item(), x3.amax().item())
 
 		return x1, x2, x3
 
-
+a = DarkNet53()
+get_params(a)
 

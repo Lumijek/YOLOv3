@@ -24,12 +24,12 @@ elif torch.cuda.is_available():
 model = YOLOv3()
 criterion = Yolov3Loss().to(device)
 epochs = 160
-batch_size = 4
+batch_size = 8
 classes = ['horse', 'person', 'bottle', 'dog', 'tvmonitor', 'car', 'aeroplane', 'bicycle', 'boat', 'chair', 'diningtable', 'pottedplant', 'train', 'cat', 'sofa', 'bird', 'sheep', 'motorbike', 'bus', 'cow']
 dataloader = get_dataset(batch_size)
 
-lr = 1e-3
-optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0.0005)
+lr = 4e-5
+optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
 
 def train_network(model, optimizer, criterion, epochs, dataloader, device):
     model = nn.DataParallel(model)
@@ -51,11 +51,9 @@ def train_network(model, optimizer, criterion, epochs, dataloader, device):
             optimizer.zero_grad()
 
             x1, x2, x3 = model(image)
-            print(x1.shape)
             loss_s1, a1, b1, c1 = criterion(x1, labels[0], 0)
             loss_s2, a2, b2, c2 = criterion(x2, labels[1], 1)
             loss_s3, a3, b3, c3 = criterion(x3, labels[2], 2)
-            print(labels[0].shape)
 
             loss = loss_s1 + loss_s2 + loss_s3
             a = a1 + a2 + a3
@@ -63,11 +61,11 @@ def train_network(model, optimizer, criterion, epochs, dataloader, device):
             c = c1 + c2 + c3
             loss.backward()
             optimizer.step()
-            if cycle % 10 == 0:
+            if cycle % 1 == 0:
                 print("Loss:", loss.item())
-                print(a1.item(), b1.item(), c1.item())
-                print(a2.item(), b2.item(), c2.item())
-                print(a3.item(), b3.item(), c3.item())
+                #print(a1.item(), b1.item(), c1.item())
+                #print(a2.item(), b2.item(), c2.item())
+                #print(a3.item(), b3.item(), c3.item())
 
             if cycle % 200 == 0:
                 torch.save(model.state_dict(), "model.pt")

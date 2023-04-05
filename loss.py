@@ -3,6 +3,20 @@ import torch.nn as nn
 from config import anchors
 import torchvision.ops as bops
 
+'''
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2.0, alpha=1.0, reduction="mean"):
+        super(FocalLoss, self).__init__()
+        self.__gamma = gamma
+        self.__alpha = alpha
+        self.__loss = nn.BCEWithLogitsLoss(reduction=reduction)
+
+    def forward(self, input, target):
+        loss = self.__loss(input=input, target=target)
+        loss *= self.__alpha * torch.pow(torch.abs(target - torch.sigmoid(input)), self.__gamma)
+
+        return loss
+'''
 def iou(bbox1, bbox2):
 	bbox1 = bbox1.clone()
 	bbox2 = bbox2.clone()
@@ -33,9 +47,10 @@ class Yolov3Loss(nn.Module):
 		self.lambda_class = lambda_class
 
 		self.register_buffer("anchors", anchors.reshape(3, 3, 2))
-		self.mse = nn.MSELoss(reduction="mean")
+		self.mse = nn.MSELoss(reduction="sum")
 		self.cel = nn.CrossEntropyLoss(reduction="sum")
-		self.bce = nn.BCEWithLogitsLoss(reduction='mean')
+		self.bce = nn.BCEWithLogitsLoss(reduction='sum')
+		#self.focal = FocalLoss(reduction="none")
 
 	def forward(self, predictions, labels, scale_idx):
 		batch_size = predictions.shape[0]
@@ -46,7 +61,6 @@ class Yolov3Loss(nn.Module):
 		*_, anchors_indices = torch.where(object_inds)
 		predictions[:, :, :, :, 0:2] = torch.sigmoid(predictions[:, :, :, :, 0:2])
 		predictions[:, :, :, :, 2:4] = scale_anchors * torch.exp(predictions[:, :, :, :, 2:4])
-
 		obj_preds = predictions[object_inds]
 		obj_labels = labels[object_inds]
 
@@ -54,9 +68,9 @@ class Yolov3Loss(nn.Module):
 		noobj_labels = labels[~object_inds]
 
 		if obj_preds.shape[0] == 0:
-			loss_noobj_conf = self.bce(noobj_preds[:, 4], noobj_labels[:, 4])
+			loss_noobj_conf = self.focal(noobj_preds[:, 4], noobj_labels[:, 4])
 			loss_confidence = (loss_noobj_conf * self.lambda_noobj) / batch_size
-			return loss_confidence, torch.tensor(0), loss_confidence, torch.tensor(0)
+			return loss_confidence, torch.tensor(0), torch.tensor(0), loss_confidence, torch.tensor(0), torch.tensor(0)
 
 		# LOSS CALCULATION
 
@@ -69,12 +83,12 @@ class Yolov3Loss(nn.Module):
 
 		loss_class = self.cel(obj_preds[:, 5:], obj_labels[:, 5].long())
 
-		loss_coord = (self.lambda_coord * (loss_xy + loss_wh))# / batch_size
-		loss_confidence = (loss_obj_conf + loss_noobj_conf * self.lambda_noobj)# / batch_size
-		loss_class = (self.lambda_class * loss_class) / batch_size
+		loss_coord = (self.lambda_coord * (loss_xy + loss_wh)) / batch_size
+		loss_confidence = (torch.sum(loss_obj_conf) + torch.sum(loss_noobj_conf) * self.lambda_noobj) / batch_size
+		loss_cls = (self.lambda_class * loss_class) / batch_size
 
-		loss = loss_coord + loss_confidence + loss_class
+		loss = loss_coord + loss_confidence + loss_cls
 
-		return loss, loss_coord, loss_confidence, loss_class
+		return loss, loss_xy * 5, loss_wh * 5, loss_obj_conf, loss_noobj_conf * 0.5, loss_class
 
 

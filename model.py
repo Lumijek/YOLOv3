@@ -140,8 +140,6 @@ class YOLOv3(nn.Module):
 
 	def forward(self, x):
 		out1, out2, out3 = self.backbone(x)
-		print("")
-		print(out1.var().item(), out2.var().item(), out3.var().item())
 
 		cat1 = self.detector1(out3)
 		x1 = self.out1(cat1)
@@ -165,8 +163,14 @@ class YOLOv3(nn.Module):
 
 		x3 = x3.reshape(-1, 3, (5 + self.num_classes), x3.shape[-1], x3.shape[-1])
 		x3 = x3.permute(0, 3, 4, 1, 2).contiguous()
-		print(x1.amax().item(), x2.amax().item(), x3.amax().item())
+		#print(x1.amax().item(), x2.amax().item(), x3.amax().item())
 
 		return x1, x2, x3
+if __name__ == '__main__':
+    model = YOLOv3()
 
+    #print(net)
+
+    x = torch.randn(12, 3, 416, 416)
+    out = model(x) 
 

@@ -12,7 +12,7 @@ import albumentations as A
 import albumentations.pytorch
 import numpy as np
 
-
+#torch.manual_seed()
 classes = ['horse', 'person', 'bottle', 'dog', 'tvmonitor', 'car', 'aeroplane', 'bicycle', 'boat', 'chair', 'diningtable', 'pottedplant', 'train', 'cat', 'sofa', 'bird', 'sheep', 'motorbike', 'bus', 'cow']
 def get_bboxlist(bnds):
     bboxes = []
@@ -30,6 +30,18 @@ def same_xy_iou(box, anchors):
     unions = box.prod() + anchors.prod(dim=1)
     return intersections / (unions - intersections)
 
+#ultralytics transforms:
+'''
+T = [
+    A.RandomResizedCrop(height=size, width=size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=0.0),
+    A.Blur(p=0.01),
+    A.MedianBlur(p=0.01),
+    A.ToGray(p=0.01),
+    A.CLAHE(p=0.01),
+    A.RandomBrightnessContrast(p=0.0),
+    A.RandomGamma(p=0.0),
+    A.ImageCompression(quality_lower=75, p=0.0)]  # transforms
+'''
 
 class YoloDataset(Dataset):
     def __init__(self, data, S=[13, 26, 52], C=20, image_size=416, min_iou=0.35):
@@ -51,18 +63,21 @@ class YoloDataset(Dataset):
         bnds = o['annotation']['object']
         bboxes = get_bboxlist(bnds)
         transform = A.Compose([
-            A.Resize(self.image_size, self.image_size),
-            A.RandomCrop(self.image_size, self.image_size),
-            A.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.07),
-            A.HorizontalFlip(),
-            A.pytorch.transforms.ToTensorV2()
-        ], bbox_params=A.BboxParams(format='pascal_voc'))
+            A.RandomResizedCrop(height=self.image_size, width=self.image_size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=1.0),
+            A.Blur(p=0.13),
+            A.MedianBlur(p=0.13),
+            A.ToGray(p=0.03),
+            A.CLAHE(p=0.5),
+            A.RandomBrightnessContrast(p=0.5),
+            A.RandomGamma(p=0.5),
+            A.ImageCompression(quality_lower=75, p=0.05),  # transforms
+            A.pytorch.transforms.ToTensorV2()],
+            bbox_params=A.BboxParams(format='pascal_voc'))
 
         augmentations = transform(image=image, bboxes=bboxes)
         image = augmentations["image"]
         bboxes = augmentations["bboxes"]
         image = image / 255.0
-        
         for i, box in enumerate(bboxes):
             # xyxy format to xywh
             width = box[2] - box[0]
@@ -72,7 +87,14 @@ class YoloDataset(Dataset):
             bboxes[i] = [xcenter, ycenter, width, height, box[4]]
             
         bboxes = torch.tensor(bboxes)
-        bboxes[:, :4] /= self.image_size
+        try:
+            bboxes[:, :4] /= self.image_size
+        except:
+            print(bboxes.shape)
+            print(bboxes)
+            print(image.shape)
+            print(bnds)
+            print(augmentations["bboxes"])
 
         labels = [torch.zeros(S, S, 3, 6) for S in self.S]
         for box in bboxes:

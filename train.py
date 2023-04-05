@@ -54,11 +54,7 @@ def train_network(model, optimizer, scheduler, criterion, epochs, dataloader, de
             labels = [l.to(device) for l in labels]
 
             optimizer.zero_grad()
-            print("1.", torch.amin(image))
             x1, x2, x3 = model(image)
-            print("2.", torch.amin(x1))
-            print("3.", torch.amin(x2))
-            print("4.", torch.amin(x3))
 
             loss_s1, a1, b1, c1, d1, e1 = criterion(x1, labels[0], 0)
             loss_s2, a2, b2, c2, d2, e2 = criterion(x2, labels[1], 1)
@@ -66,12 +62,6 @@ def train_network(model, optimizer, scheduler, criterion, epochs, dataloader, de
 
             loss = loss_s1 + loss_s2 + loss_s3
             loss.backward()
-            for n, p in model.named_parameters():
-                try:
-                    print(n, p.grad.amin().item(), p.grad.amax().item())
-                    print(n, p.amin().item(), p.amax().item())
-                except Exception as e:
-                    print(n, e)
 
             optimizer.step()
             scheduler.step()
